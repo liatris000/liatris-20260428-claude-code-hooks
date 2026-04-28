@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude Code Hooks — 実務で使える6つのレシピ</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #21262d;
+    --border: #30363d;
+    --text: #c9d1d9;
+    --text-dim: #8b949e;
+    --accent: #eb5927;
+    --green: #3fb950;
+    --yellow: #d29922;
+    --red: #f85149;
+    --blue: #58a6ff;
+    --purple: #bc8cff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    line-height: 1.6;
+  }
+  header {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    padding: 60px 24px;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+  }
+  header .tag {
+    display: inline-block;
+    background: var(--accent);
+    color: white;
+    padding: 4px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 20px;
+    letter-spacing: 0.05em;
+  }
+  header h1 {
+    font-size: clamp(22px, 4vw, 40px);
+    font-weight: 700;
+    color: white;
+    line-height: 1.3;
+    margin-bottom: 12px;
+  }
+  header p { color: #9ca3af; font-size: 15px; }
+  .container { max-width: 900px; margin: 0 auto; padding: 40px 24px; }
+  .intro {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 40px;
+    font-size: 15px;
+  }
+  h2 {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 20px;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .hooks-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+    margin-bottom: 48px;
+  }
+  .hook-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+  .hook-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+  }
+  .hook-card .event-badge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 10px;
+    display: inline-block;
+    margin-bottom: 12px;
+    letter-spacing: 0.05em;
+  }
+  .badge-session { background: #1c3a6b; color: var(--blue); }
+  .badge-pre { background: #3d1f1f; color: var(--red); }
+  .badge-post { background: #1a3320; color: var(--green); }
+  .badge-stop { background: #2d2550; color: var(--purple); }
+  .hook-card h3 { font-size: 16px; font-weight: 600; color: white; margin-bottom: 8px; }
+  .hook-card p { font-size: 13px; color: var(--text-dim); margin-bottom: 12px; }
+  .hook-card .features { list-style: none; }
+  .hook-card .features li {
+    font-size: 12px;
+    color: var(--text-dim);
+    padding: 2px 0;
+  }
+  .hook-card .features li::before { content: "✓ "; color: var(--green); }
+  .code-section { margin-bottom: 48px; }
+  .code-block {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-top: 16px;
+  }
+  .code-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+  .code-header .dot {
+    width: 10px; height: 10px; border-radius: 50%;
+  }
+  .dot-red { background: #f85149; }
+  .dot-yellow { background: #d29922; }
+  .dot-green { background: #3fb950; }
+  pre {
+    padding: 20px;
+    font-family: 'Cascadia Code', 'Fira Code', 'Courier New', monospace;
+    font-size: 13px;
+    line-height: 1.7;
+    overflow-x: auto;
+    color: var(--text);
+  }
+  .kw { color: #ff7b72; }
+  .str { color: #a5d6ff; }
+  .cmt { color: #8b949e; font-style: italic; }
+  .fn { color: #d2a8ff; }
+  .num { color: #79c0ff; }
+  .flow-section { margin-bottom: 48px; }
+  .flow {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin-top: 16px;
+  }
+  .flow-item {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-size: 13px;
+    text-align: center;
+  }
+  .flow-arrow { color: var(--accent); font-size: 20px; }
+  .flow-item .label { color: var(--text-dim); font-size: 11px; margin-bottom: 4px; }
+  .flow-item .name { color: white; font-weight: 600; }
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 32px 24px;
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 13px;
+  }
+  footer a { color: var(--blue); text-decoration: none; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="tag">Claude Code × Hooks 実践</div>
+  <h1>Claude Code Hooks<br>実務で使える6つのレシピ</h1>
+  <p>セッション開始通知 / 危険コマンドブロック / 自動フォーマット / ログ記録 / タスク完了通知</p>
+</header>
+
+<div class="container">
+
+  <div class="intro">
+    <strong>このページについて</strong><br>
+    Claude Code Hooks（ツール実行の前後に任意のシェルコマンドを自動実行できる機能）を実務で使える形にまとめました。
+    コピー&amp;ペーストですぐ使えるスクリプト付きです。
+    ソースコード: <a href="https://github.com/liatris000/" style="color:#58a6ff;">GitHub リポジトリ</a>
+  </div>
+
+  <h2>🪝 実装したHookの一覧</h2>
+  <div class="hooks-grid">
+
+    <div class="hook-card">
+      <span class="event-badge badge-session">SessionStart</span>
+      <h3>セッション開始サマリー</h3>
+      <p>Claude Codeを起動したとき、プロジェクト状態を自動表示</p>
+      <ul class="features">
+        <li>現在のGitブランチ表示</li>
+        <li>未コミット変更件数</li>
+        <li>最新コミットメッセージ</li>
+        <li>.envファイルの存在チェック</li>
+      </ul>
+    </div>
+
+    <div class="hook-card">
+      <span class="event-badge badge-pre">PreToolUse</span>
+      <h3>保護ファイルガード</h3>
+      <p>編集前に機密ファイルへのアクセスをブロック</p>
+      <ul class="features">
+        <li>.env / .env.production をブロック</li>
+        <li>secrets.json / credentials.json をブロック</li>
+        <li>package.json 変更時に警告</li>
+        <li>ブロック理由をClaude Codeに通知</li>
+      </ul>
+    </div>
+
+    <div class="hook-card">
+      <span class="event-badge badge-pre">PreToolUse</span>
+      <h3>危険コマンドブロック</h3>
+      <p>Bash実行前に破壊的コマンドをインターセプト</p>
+      <ul class="features">
+        <li>rm -rf / 系コマンドをブロック</li>
+        <li>dd if=/dev/zero 等をブロック</li>
+        <li>本番デプロイコマンドで確認</li>
+        <li>パターンマッチで柔軟に拡張可能</li>
+      </ul>
+    </div>
+
+    <div class="hook-card">
+      <span class="event-badge badge-post">PostToolUse</span>
+      <h3>自動フォーマット</h3>
+      <p>ファイル編集後に対応フォーマッターを自動実行</p>
+      <ul class="features">
+        <li>JS/TS/JSON/CSS → Prettier</li>
+        <li>Python → Black または Ruff</li>
+        <li>Shell → shfmt</li>
+        <li>フォーマッターが無い場合はスキップ</li>
+      </ul>
+    </div>
+
+    <div class="hook-card">
+      <span class="event-badge badge-post">PostToolUse</span>
+      <h3>Bashコマンドロガー</h3>
+      <p>実行したコマンドをすべてログファイルに記録</p>
+      <ul class="features">
+        <li>~/.claude/bash-history.log に記録</li>
+        <li>タイムスタンプ + 終了コード付き</li>
+        <li>200文字で切り詰め（ログが肥大化しない）</li>
+        <li>あとからClaude Codeの操作を追跡可能</li>
+      </ul>
+    </div>
+
+    <div class="hook-card">
+      <span class="event-badge badge-stop">Stop</span>
+      <h3>タスク完了通知</h3>
+      <p>Claude Codeがタスクを完了したらデスクトップ通知</p>
+      <ul class="features">
+        <li>macOS: osascript で通知</li>
+        <li>Linux: notify-send で通知</li>
+        <li>ターミナルベルでフォールバック</li>
+        <li>エラー停止時は別メッセージ</li>
+      </ul>
+    </div>
+
+  </div>
+
+  <div class="code-section">
+    <h2>⚙️ settings.json の設定</h2>
+    <div class="code-block">
+      <div class="code-header">
+        <span class="dot dot-red"></span>
+        <span class="dot dot-yellow"></span>
+        <span class="dot dot-green"></span>
+        <span>.claude/settings.json</span>
+      </div>
+      <pre>{
+  <span class="str">"hooks"</span>: {
+    <span class="str">"SessionStart"</span>: [{
+      <span class="str">"hooks"</span>: [{
+        <span class="str">"type"</span>: <span class="str">"command"</span>,
+        <span class="str">"command"</span>: <span class="str">"bash scripts/hooks/session-start.sh"</span>
+      }]
+    }],
+    <span class="str">"PreToolUse"</span>: [
+      {
+        <span class="str">"matcher"</span>: <span class="str">"Edit|Write"</span>,
+        <span class="str">"hooks"</span>: [{ <span class="str">"type"</span>: <span class="str">"command"</span>, <span class="str">"command"</span>: <span class="str">"bash scripts/hooks/pre-edit-check.sh"</span> }]
+      },
+      {
+        <span class="str">"matcher"</span>: <span class="str">"Bash"</span>,
+        <span class="str">"hooks"</span>: [{ <span class="str">"type"</span>: <span class="str">"command"</span>, <span class="str">"command"</span>: <span class="str">"bash scripts/hooks/pre-bash-guard.sh"</span> }]
+      }
+    ],
+    <span class="str">"PostToolUse"</span>: [
+      {
+        <span class="str">"matcher"</span>: <span class="str">"Edit|Write"</span>,
+        <span class="str">"hooks"</span>: [{ <span class="str">"type"</span>: <span class="str">"command"</span>, <span class="str">"command"</span>: <span class="str">"bash scripts/hooks/post-edit-format.sh"</span> }]
+      },
+      {
+        <span class="str">"matcher"</span>: <span class="str">"Bash"</span>,
+        <span class="str">"hooks"</span>: [{ <span class="str">"type"</span>: <span class="str">"command"</span>, <span class="str">"command"</span>: <span class="str">"bash scripts/hooks/post-bash-logger.sh"</span> }]
+      }
+    ],
+    <span class="str">"Stop"</span>: [{
+      <span class="str">"hooks"</span>: [{ <span class="str">"type"</span>: <span class="str">"command"</span>, <span class="str">"command"</span>: <span class="str">"bash scripts/hooks/stop-notify.sh"</span> }]
+    }]
+  }
+}</pre>
+    </div>
+  </div>
+
+  <div class="flow-section">
+    <h2>🔄 Hooksが動くタイミング</h2>
+    <div class="flow">
+      <div class="flow-item">
+        <div class="label">起動時</div>
+        <div class="name">SessionStart</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-item">
+        <div class="label">ツール実行前</div>
+        <div class="name">PreToolUse</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-item">
+        <div class="label">ツール本体</div>
+        <div class="name">Edit / Bash 等</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-item">
+        <div class="label">ツール実行後</div>
+        <div class="name">PostToolUse</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-item">
+        <div class="label">タスク終了時</div>
+        <div class="name">Stop</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <p>作成: <a href="https://zenn.dev/liatris">zenn.dev/liatris</a> | ソースコード: <a href="https://github.com/liatris000/">GitHub</a></p>
+  <p style="margin-top:8px;">この記事はClaude Codeが自律的に生成しました。</p>
+</footer>
+
+</body>
+</html>
